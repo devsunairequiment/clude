@@ -41,6 +41,6 @@ sudo ./harden-ssh.sh                 # en el servidor
 ## Después de instalar
 1. **AdGuard**: abre `:3003` para el primer setup y luego pon la IP del servidor como DNS en tu router.
 2. **NPM**: entra en `:81` (admin@example.com / changeme) y cambia las credenciales.
-3. **Vaultwarden**: créale un proxy en NPM con HTTPS, crea tu cuenta y pon `SIGNUPS_ALLOWED: "false"`.
+3. **Vaultwarden**: ejecuta `sudo ./vaultwarden-https.sh` (HTTPS con Tailscale), crea tu cuenta y pon `VAULTWARDEN_SIGNUPS=false` en `.env`.
 4. **VPN**: abre el puerto 51820/udp en el router hacia el servidor.
 5. Pon una IP fija al servidor (reserva DHCP en el router).

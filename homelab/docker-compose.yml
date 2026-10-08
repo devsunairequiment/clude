@@ -63,9 +63,10 @@ services:
   vaultwarden:         # Gestor de contraseñas compatible con Bitwarden
     image: vaultwarden/server:latest
     container_name: vaultwarden
+    ports: ["127.0.0.1:8222:80"]   # solo local; se publica con HTTPS vía Tailscale
     environment:
       DOMAIN: ${VAULTWARDEN_DOMAIN}
-      SIGNUPS_ALLOWED: "true"   # Cambia a false tras crear tu cuenta
+      SIGNUPS_ALLOWED: ${VAULTWARDEN_SIGNUPS:-true}   # pon false en .env tras crear tu cuenta
     volumes:
       - ${DATA_PATH}/vaultwarden:/data
     restart: unless-stopped
