@@ -23,7 +23,7 @@ services:
   npm:                 # Reverse proxy con certificados HTTPS (Let's Encrypt)
     image: jc21/nginx-proxy-manager:latest
     container_name: npm
-    ports: ["80:80", "443:443", "81:81"]
+    ports: ["${NPM_HTTP_PORT:-80}:80", "${NPM_HTTPS_PORT:-443}:443", "81:81"]
     volumes:
       - ${DATA_PATH}/npm/data:/data
       - ${DATA_PATH}/npm/letsencrypt:/etc/letsencrypt
@@ -32,6 +32,7 @@ services:
   adguard:             # DNS con bloqueo de anuncios para toda la red
     image: adguard/adguardhome:latest
     container_name: adguard
+    profiles: [adguard]    # install.sh lo omite si ya hay otro DNS (p. ej. Pi-hole) en el puerto 53
     ports: ["53:53/tcp", "53:53/udp", "8080:80", "3003:3000"]
     volumes:
       - ${DATA_PATH}/adguard/work:/opt/adguardhome/work
@@ -103,8 +104,10 @@ services:
     restart: unless-stopped
 
   watchtower:          # Actualiza los contenedores automáticamente cada noche
-    image: containrrr/watchtower:latest
+    image: nickfedor/watchtower:latest   # fork mantenido; el original no soporta Docker reciente
     container_name: watchtower
+    # Solo actualiza los servicios de este stack, no tus contenedores propios
+    command: homepage portainer npm adguard uptime-kuma jellyfin vaultwarden netdata wg-easy watchtower
     environment:
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_SCHEDULE: "0 0 4 * * *"

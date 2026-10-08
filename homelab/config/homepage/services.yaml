@@ -8,9 +8,9 @@
         icon: nginx-proxy-manager.png
         container: npm
         server: local
-    - AdGuard Home:
-        icon: adguard-home.png
-        container: adguard
+    - Pi-hole:
+        icon: pi-hole.png
+        container: pihole
         server: local
 - Monitorización:
     - Uptime Kuma:
@@ -23,6 +23,10 @@
     - Jellyfin:
         icon: jellyfin.png
         container: jellyfin
+        server: local
+    - Ollama:
+        icon: ollama.png
+        container: ollama
         server: local
     - Vaultwarden:
         icon: vaultwarden.png

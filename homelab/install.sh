@@ -68,14 +68,35 @@ fi
 echo "==> Levantando servicios"
 cd "$DIR"
 [[ -f .env ]] || cp .env.example .env
-# Jellyfin solo se crea si no existe ya uno en el servidor
-if docker ps -a --format '{{.Names}}' | grep -qx jellyfin && \
-   [[ "$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' jellyfin)" != "homelab" ]]; then
+ours() { [[ "$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$1" 2>/dev/null)" == "homelab" ]]; }
+exists() { docker ps -a --format '{{.Names}}' | grep -qx "$1"; }
+port_busy() { ss -Hlntu "( sport = :$1 )" | grep -q .; }
+PROFILES=()
+
+# Jellyfin solo se crea si no existe ya uno propio en el servidor
+if exists jellyfin && ! ours jellyfin; then
   echo "    Ya tienes un Jellyfin propio: lo respeto y no creo otro"
-  docker compose up -d
 else
-  docker compose --profile jellyfin up -d
+  PROFILES+=(--profile jellyfin)
 fi
+
+# AdGuard solo si el puerto 53 está libre (si ya tienes Pi-hole, se usa ese)
+exists adguard && ours adguard && docker rm -f adguard >/dev/null
+if port_busy 53; then
+  echo "    El puerto 53 ya lo usa otro DNS (p. ej. Pi-hole): no instalo AdGuard"
+else
+  PROFILES+=(--profile adguard)
+fi
+
+# Nginx Proxy Manager en puertos alternativos si el 80/443 están ocupados
+exists npm && ours npm && docker rm -f npm >/dev/null
+if port_busy 80 || port_busy 443; then
+  export NPM_HTTP_PORT=8880 NPM_HTTPS_PORT=8443
+  ufw allow 8880,8443/tcp >/dev/null
+  echo "    El puerto 80/443 está ocupado: Nginx Proxy Manager usará 8880/8443"
+fi
+
+docker compose "${PROFILES[@]}" up -d
 
 IP="$(hostname -I | awk '{print $1}')"
 cat <<M
@@ -85,7 +106,7 @@ cat <<M
   Dashboard ........ http://$IP:3000
   Portainer ........ https://$IP:9443
   Proxy (NPM) ...... http://$IP:81
-  AdGuard (DNS) .... http://$IP:8080
+  AdGuard (DNS) .... http://$IP:8080  (si se instaló)
   Uptime Kuma ...... http://$IP:3001
   Jellyfin ......... http://$IP:8096
   Netdata .......... http://$IP:19999
