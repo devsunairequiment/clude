@@ -91,7 +91,7 @@ fi
 # Nginx Proxy Manager en puertos alternativos si el 80/443 están ocupados
 exists npm && ours npm && docker rm -f npm >/dev/null
 if port_busy 80 || port_busy 443; then
-  export NPM_HTTP_PORT=8880 NPM_HTTPS_PORT=8443
+  grep -q '^NPM_HTTP_PORT=' .env || printf 'NPM_HTTP_PORT=8880\nNPM_HTTPS_PORT=8443\n' >> .env
   ufw allow 8880,8443/tcp >/dev/null
   echo "    El puerto 80/443 está ocupado: Nginx Proxy Manager usará 8880/8443"
 fi
