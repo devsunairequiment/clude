@@ -29,7 +29,8 @@ ufw default allow outgoing
 ufw allow from "$LAN" to any port 22 proto tcp
 ufw allow 80,443/tcp
 ufw allow from "$LAN" to any port 53
-ufw allow from "$LAN" to any port 81,3000,3001,3003,8096,9443,8080,19999,51821 proto tcp
+ufw allow from "$LAN" to any port 81,2283,3000,3001,3003,8096,8123,9443,8080,19999,51821 proto tcp
+ufw allow from "$LAN" to any port 5353 proto udp      # mDNS: Home Assistant descubre dispositivos
 ufw allow from "$LAN" to any port 3389 proto tcp      # xrdp (escritorio remoto)
 ufw allow from "$LAN" to any port 139,445 proto tcp   # Samba
 ufw allow in on tailscale0                            # Tailscale
@@ -68,6 +69,11 @@ fi
 echo "==> Levantando servicios"
 cd "$DIR"
 [[ -f .env ]] || cp .env.example .env
+# Variables nuevas que un .env antiguo no tenga
+grep -q '^PHOTOS_PATH=' .env || echo "PHOTOS_PATH=$(grep -oP '^DATA_PATH=\K.*' .env || echo /srv/homelab)/immich/library" >> .env
+grep -q '^IMMICH_VERSION=' .env || echo "IMMICH_VERSION=v3" >> .env
+# Contraseña aleatoria para la base de datos de Immich (solo letras y números)
+grep -q '^IMMICH_DB_PASSWORD=' .env || echo "IMMICH_DB_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32)" >> .env
 ours() { [[ "$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$1" 2>/dev/null)" == "homelab" ]]; }
 exists() { docker ps -a --format '{{.Names}}' | grep -qx "$1"; }
 port_busy() { ss -Hlntu "( sport = :$1 )" | grep -q .; }
@@ -118,6 +124,8 @@ cat <<M
   DNS .............. Pi-hole o AdGuard (http://$IP:8080)
   Uptime Kuma ...... http://$IP:3001
   Jellyfin ......... http://$IP:8096
+  Immich (fotos) ... http://$IP:2283
+  Home Assistant ... http://$IP:8123
   Netdata .......... http://$IP:19999
   Vaultwarden ...... vía NPM con HTTPS
   Acceso remoto .... Tailscale

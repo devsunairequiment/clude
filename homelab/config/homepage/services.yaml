@@ -24,6 +24,16 @@
         icon: jellyfin.png
         container: jellyfin
         server: local
+    - Immich:
+        href: http://192.168.1.26:2283
+        icon: immich.png
+        container: immich_server
+        server: local
+    - Home Assistant:
+        href: http://192.168.1.26:8123
+        icon: home-assistant.png
+        container: homeassistant
+        server: local
     - Ollama:
         icon: ollama.png
         container: ollama

@@ -70,6 +70,64 @@ services:
       - ${DATA_PATH}/vaultwarden:/data
     restart: unless-stopped
 
+  immich-server:       # Fotos y vídeos (alternativa a Google Fotos)
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v3}
+    container_name: immich_server
+    ports: ["2283:2283"]
+    environment: &immich-env
+      TZ: ${TZ}
+      DB_HOSTNAME: immich-database
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${IMMICH_DB_PASSWORD}
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: immich-redis
+    volumes:
+      - ${PHOTOS_PATH:-/srv/homelab/immich/library}:/data
+      - /etc/localtime:/etc/localtime:ro
+    depends_on: [immich-redis, immich-database]
+    restart: unless-stopped
+
+  immich-machine-learning:   # Reconocimiento de caras y búsqueda inteligente
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v3}
+    container_name: immich_machine_learning
+    environment: *immich-env
+    volumes:
+      - ${DATA_PATH}/immich/model-cache:/cache
+    restart: unless-stopped
+
+  immich-redis:
+    image: docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
+    container_name: immich_redis
+    healthcheck:
+      test: redis-cli ping | grep -q PONG || exit 1
+    restart: unless-stopped
+
+  immich-database:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    container_name: immich_postgres
+    environment:
+      POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD}
+      POSTGRES_USER: postgres
+      POSTGRES_DB: immich
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - ${DATA_PATH}/immich/postgres:/var/lib/postgresql/data
+    shm_size: 128mb
+    restart: unless-stopped
+
+  homeassistant:       # Domótica: luces, enchufes, sensores, automatizaciones
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    network_mode: host   # necesario para descubrir dispositivos en tu red
+    privileged: true
+    environment:
+      TZ: ${TZ}
+    volumes:
+      - ${DATA_PATH}/homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    restart: unless-stopped
+
   netdata:             # Métricas en tiempo real del servidor
     image: netdata/netdata:stable
     container_name: netdata
@@ -107,8 +165,9 @@ services:
   watchtower:          # Actualiza los contenedores automáticamente cada noche
     image: nickfedor/watchtower:latest   # fork mantenido; el original no soporta Docker reciente
     container_name: watchtower
-    # Solo actualiza los servicios de este stack, no tus contenedores propios
-    command: homepage portainer npm adguard uptime-kuma jellyfin vaultwarden netdata wg-easy watchtower
+    # Solo actualiza los servicios de este stack, no tus contenedores propios.
+    # Immich queda fuera: sus actualizaciones pueden requerir pasos manuales.
+    command: homepage portainer npm adguard uptime-kuma jellyfin vaultwarden netdata wg-easy homeassistant watchtower
     environment:
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_SCHEDULE: "0 0 4 * * *"

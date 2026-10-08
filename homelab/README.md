@@ -31,6 +31,8 @@ sudo ./harden-ssh.sh                 # en el servidor
 | AdGuard Home | 8080 / 3003 (primer setup) | DNS con bloqueo de anuncios; se omite si ya hay Pi-hole |
 | Uptime Kuma | 3001 | Alertas si algo se cae |
 | Jellyfin | 8096 | Películas y series |
+| Immich | 2283 | Fotos y vídeos, con app móvil y copia automática |
+| Home Assistant | 8123 | Domótica y automatizaciones |
 | Vaultwarden | vía NPM | Gestor de contraseñas |
 | Netdata | 19999 | Métricas en tiempo real |
 | wg-easy (opcional, `ENABLE_WG=1`) | 51821 (admin), 51820/udp | VPN propia; por defecto se usa Tailscale |
