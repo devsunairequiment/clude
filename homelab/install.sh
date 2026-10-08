@@ -29,7 +29,10 @@ ufw default allow outgoing
 ufw allow from "$LAN" to any port 22 proto tcp
 ufw allow 80,443/tcp
 ufw allow from "$LAN" to any port 53
-ufw allow from "$LAN" to any port 81,3000,3001,8096,9443,8080,19999 proto tcp
+ufw allow from "$LAN" to any port 81,3000,3001,3003,8096,9443,8080,19999,51821 proto tcp
+ufw allow from "$LAN" to any port 3389 proto tcp      # xrdp (escritorio remoto)
+ufw allow from "$LAN" to any port 139,445 proto tcp   # Samba
+ufw allow in on tailscale0                            # Tailscale
 ufw allow 51820/udp   # WireGuard
 ufw --force enable
 
@@ -46,7 +49,9 @@ echo "==> Liberando el puerto 53 para AdGuard"
 if systemctl is-active --quiet systemd-resolved; then
   mkdir -p /etc/systemd/resolved.conf.d
   printf "[Resolve]\nDNSStubListener=no\nDNS=1.1.1.1\n" >/etc/systemd/resolved.conf.d/adguard.conf
-  ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+  # rm + ln: el ln de rust-coreutils (Ubuntu 26.04) no sobrescribe con -sf
+  rm -f /etc/resolv.conf
+  ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
   systemctl restart systemd-resolved
 fi
 
