@@ -29,7 +29,7 @@ ufw default allow outgoing
 ufw allow from "$LAN" to any port 22 proto tcp
 ufw allow 80,443/tcp
 ufw allow from "$LAN" to any port 53
-ufw allow from "$LAN" to any port 81,2283,3000,3001,3003,8096,8123,9443,8080,19999,51821 proto tcp
+ufw allow from "$LAN" to any port 81,2283,3000,3080,3001,3003,8096,8123,9443,8080,19999,51821 proto tcp
 ufw allow from "$LAN" to any port 5353 proto udp      # mDNS: Home Assistant descubre dispositivos
 ufw allow from "$LAN" to any port 3389 proto tcp      # xrdp (escritorio remoto)
 ufw allow from "$LAN" to any port 139,445 proto tcp   # Samba
@@ -82,6 +82,7 @@ cd "$DIR"
 grep -q '^PHOTOS_PATH=' .env || echo "PHOTOS_PATH=$(grep -oP '^DATA_PATH=\K.*' .env || echo /srv/homelab)/immich/library" >> .env
 grep -q '^IMMICH_VERSION=' .env || echo "IMMICH_VERSION=v3" >> .env
 # Contraseña aleatoria para la base de datos de Immich (solo letras y números)
+grep -q '^OPENWEBUI_SECRET_KEY=' .env || echo "OPENWEBUI_SECRET_KEY=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 48)" >> .env
 grep -q '^IMMICH_DB_PASSWORD=' .env || echo "IMMICH_DB_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32)" >> .env
 ours() { [[ "$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$1" 2>/dev/null)" == "homelab" ]]; }
 exists() { docker ps -a --format '{{.Names}}' | grep -qx "$1"; }
@@ -111,6 +112,19 @@ if port_busy 80 || port_busy 443; then
   echo "    El puerto 80/443 está ocupado: Nginx Proxy Manager usará 8880/8443"
 fi
 
+# Dónde está tu Ollama: en el puerto local 11434 o, si no lo publica, en la IP de su contenedor
+OLLAMA_URL=http://127.0.0.1:11434
+if ! curl -fsm 3 "$OLLAMA_URL/api/version" >/dev/null && exists ollama; then
+  OLLAMA_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' ollama | awk '{print $1}')"
+  [[ -n "$OLLAMA_IP" ]] && OLLAMA_URL="http://$OLLAMA_IP:11434"
+fi
+sed -i '/^OLLAMA_BASE_URL=/d' .env && echo "OLLAMA_BASE_URL=$OLLAMA_URL" >> .env
+if curl -fsm 3 "$OLLAMA_URL/api/version" >/dev/null; then
+  echo "    Open WebUI usará tu Ollama en $OLLAMA_URL"
+else
+  echo "    AVISO: no encuentro Ollama en $OLLAMA_URL; Open WebUI arrancará sin modelos"
+fi
+
 # VPN WireGuard propia solo si se pide; por defecto se usa Tailscale
 if grep -q '^ENABLE_WG=1' .env; then
   PROFILES+=(--profile vpn)
@@ -135,6 +149,7 @@ cat <<M
   Jellyfin ......... http://$IP:8096
   Immich (fotos) ... http://$IP:2283
   Home Assistant ... http://$IP:8123
+  Open WebUI (IA) .. http://$IP:3080
   Netdata .......... http://$IP:19999
   Vaultwarden ...... vía NPM con HTTPS
   Acceso remoto .... Tailscale

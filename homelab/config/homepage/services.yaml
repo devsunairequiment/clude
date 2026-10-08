@@ -45,8 +45,8 @@
     - Vaultwarden:
         description: Contraseñas (requiere HTTPS vía NPM)
         icon: vaultwarden.png
-    - Ollama:
-        href: http://192.168.1.26:11434
-        siteMonitor: http://192.168.1.26:11434
-        description: Modelos de IA locales
-        icon: ollama.png
+    - Open WebUI:
+        href: http://192.168.1.26:3080
+        siteMonitor: http://192.168.1.26:3080
+        description: Chat con tus modelos de IA (Ollama)
+        icon: open-webui.png

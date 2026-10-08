@@ -129,6 +129,21 @@ services:
       - /run/dbus:/run/dbus:ro
     restart: unless-stopped
 
+  open-webui:          # Chat tipo ChatGPT para tus modelos de Ollama
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    network_mode: host   # así llega a tu Ollama esté como esté configurado
+    environment:
+      PORT: 3080
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      WEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
+      ANONYMIZED_TELEMETRY: "false"
+      SCARF_NO_ANALYTICS: "true"
+      DO_NOT_TRACK: "true"
+    volumes:
+      - ${DATA_PATH}/open-webui:/app/backend/data
+    restart: unless-stopped
+
   netdata:             # Métricas en tiempo real del servidor
     image: netdata/netdata:stable
     container_name: netdata
@@ -168,7 +183,7 @@ services:
     container_name: watchtower
     # Solo actualiza los servicios de este stack, no tus contenedores propios.
     # Immich queda fuera: sus actualizaciones pueden requerir pasos manuales.
-    command: homepage portainer npm adguard uptime-kuma jellyfin vaultwarden netdata wg-easy homeassistant watchtower
+    command: homepage portainer npm adguard uptime-kuma jellyfin vaultwarden netdata wg-easy homeassistant open-webui watchtower
     environment:
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_SCHEDULE: "0 0 4 * * *"
