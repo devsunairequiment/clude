@@ -1,0 +1,5 @@
+title: Homelab de Reyes
+theme: dark
+color: slate
+layout:
+  Infraestructura: {style: row, columns: 3}

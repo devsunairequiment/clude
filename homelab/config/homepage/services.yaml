@@ -1,0 +1,30 @@
+- Infraestructura:
+    - Portainer:
+        # href: https://IP-DEL-SERVIDOR:9443
+        icon: portainer.png
+        server: local
+        container: portainer
+    - Nginx Proxy Manager:
+        icon: nginx-proxy-manager.png
+        container: npm
+        server: local
+    - AdGuard Home:
+        icon: adguard-home.png
+        container: adguard
+        server: local
+- Monitorización:
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        container: uptime-kuma
+        server: local
+    - Netdata:
+        icon: netdata.png
+- Apps:
+    - Jellyfin:
+        icon: jellyfin.png
+        container: jellyfin
+        server: local
+    - Vaultwarden:
+        icon: vaultwarden.png
+        container: vaultwarden
+        server: local
