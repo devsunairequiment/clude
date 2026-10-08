@@ -96,7 +96,16 @@ if port_busy 80 || port_busy 443; then
   echo "    El puerto 80/443 está ocupado: Nginx Proxy Manager usará 8880/8443"
 fi
 
+# VPN WireGuard propia solo si se pide; por defecto se usa Tailscale
+if grep -q '^ENABLE_WG=1' .env; then
+  PROFILES+=(--profile vpn)
+else
+  exists wg-easy && ours wg-easy && docker rm -f wg-easy >/dev/null
+fi
+
 docker compose "${PROFILES[@]}" up -d
+
+NPM_PORT="$(grep -oP '^NPM_HTTP_PORT=\K.*' .env || echo 80)"
 
 IP="$(hostname -I | awk '{print $1}')"
 cat <<M
@@ -105,12 +114,13 @@ cat <<M
  Homelab listo. Abre en tu navegador:
   Dashboard ........ http://$IP:3000
   Portainer ........ https://$IP:9443
-  Proxy (NPM) ...... http://$IP:81
-  AdGuard (DNS) .... http://$IP:8080  (si se instaló)
+  Proxy (NPM) ...... http://$IP:81  (proxy en el puerto $NPM_PORT)
+  DNS .............. Pi-hole o AdGuard (http://$IP:8080)
   Uptime Kuma ...... http://$IP:3001
   Jellyfin ......... http://$IP:8096
   Netdata .......... http://$IP:19999
   Vaultwarden ...... vía NPM con HTTPS
+  Acceso remoto .... Tailscale
  Siguiente paso: ./harden-ssh.sh (después de copiar tu clave SSH)
 ==============================================
 M

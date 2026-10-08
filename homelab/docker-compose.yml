@@ -92,6 +92,7 @@ services:
   wg-easy:             # VPN WireGuard para entrar a casa desde fuera
     image: ghcr.io/wg-easy/wg-easy:14
     container_name: wg-easy
+    profiles: [vpn]        # opcional: ENABLE_WG=1 en .env (en kernels sin iptables legacy falla; usa Tailscale)
     environment:
       WG_HOST: ${WG_HOST:-cambia-por-tu-ip-publica-o-ddns}
     ports: ["51820:51820/udp", "51821:51821/tcp"]

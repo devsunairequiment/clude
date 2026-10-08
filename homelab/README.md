@@ -28,12 +28,12 @@ sudo ./harden-ssh.sh                 # en el servidor
 | Homepage | 3000 | Dashboard central |
 | Portainer | 9443 | Gestionar Docker |
 | Nginx Proxy Manager | 81 (admin), 80/443 | HTTPS y subdominios |
-| AdGuard Home | 8080 / 3003 (primer setup) | DNS y bloqueo de anuncios en toda la red |
+| AdGuard Home | 8080 / 3003 (primer setup) | DNS con bloqueo de anuncios; se omite si ya hay Pi-hole |
 | Uptime Kuma | 3001 | Alertas si algo se cae |
 | Jellyfin | 8096 | Películas y series |
 | Vaultwarden | vía NPM | Gestor de contraseñas |
 | Netdata | 19999 | Métricas en tiempo real |
-| wg-easy | 51821 (admin), 51820/udp | VPN para entrar desde fuera |
+| wg-easy (opcional, `ENABLE_WG=1`) | 51821 (admin), 51820/udp | VPN propia; por defecto se usa Tailscale |
 | Watchtower | — | Actualizaciones automáticas a las 04:00 |
 
 ## Después de instalar
