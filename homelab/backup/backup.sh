@@ -36,7 +36,14 @@ fi
 
 PATHS=("$DATA_PATH" "$PWD/.env")
 # Fotos fuera de DATA_PATH, y rutas extra (p. ej. datos de tu Pi-hole o Jellyfin propios)
-[[ -n "${PHOTOS_PATH:-}" && "$PHOTOS_PATH" != "$DATA_PATH"/* ]] && PATHS+=("$PHOTOS_PATH")
+EXCLUDES=()
+if [[ "${BACKUP_PHOTOS:-true}" == false ]]; then
+  [[ -n "${PHOTOS_PATH:-}" ]] && EXCLUDES+=(--exclude "$PHOTOS_PATH")
+elif [[ -n "${PHOTOS_PATH:-}" ]]; then
+  [[ "$PHOTOS_PATH" != "$DATA_PATH"/* ]] && PATHS+=("$PHOTOS_PATH")
+  # Miniaturas y vídeos recodificados: Immich los regenera, no hace falta copiarlos
+  EXCLUDES+=(--exclude "$PHOTOS_PATH/thumbs" --exclude "$PHOTOS_PATH/encoded-video")
+fi
 for p in ${EXTRA_BACKUP_PATHS:-}; do PATHS+=("$p"); done
 
 echo "==> Subiendo copia cifrada a $BACKUP_REPO"
@@ -45,7 +52,8 @@ restic backup --tag homelab "${PATHS[@]}" \
   --exclude "$DATA_PATH/immich/model-cache" \
   --exclude "$DATA_PATH/jellyfin/cache" \
   --exclude "$DATA_PATH/netdata/cache" \
-  --exclude "$DATA_PATH/vaultwarden"
+  --exclude "$DATA_PATH/vaultwarden" \
+  "${EXCLUDES[@]}"
 
 echo "==> Limpiando copias antiguas (7 diarias, 4 semanales, 6 mensuales)"
 restic forget --tag homelab --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune

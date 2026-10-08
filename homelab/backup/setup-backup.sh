@@ -9,15 +9,11 @@ DIR="$PWD"
 apt-get install -y restic rsync rclone jq >/dev/null
 restic self-update >/dev/null 2>&1 || true
 
+# Destino por defecto: carpeta local, separada de los datos (gratis, en este servidor)
 if ! grep -q '^BACKUP_REPO=.\+' .env; then
-  cat <<M
-Falta el destino de las copias. Añade a .env una de estas líneas y vuelve a ejecutar:
-  BACKUP_REPO=/mnt/backup/homelab            # otro disco montado en /mnt/backup
-  BACKUP_REPO=rclone:gdrive:homelab-backup   # Google Drive/OneDrive/... (antes: rclone config)
-  BACKUP_REPO=s3:https://s3.eu-central-003.backblazeb2.com/mi-bucket   # Backblaze B2 / S3
-    (para B2/S3 añade también AWS_ACCESS_KEY_ID=... y AWS_SECRET_ACCESS_KEY=...)
-M
-  exit 1
+  sed -i '/^BACKUP_REPO=$/d' .env
+  echo "BACKUP_REPO=/srv/backups/homelab" >> .env
+  echo "==> Destino de las copias: /srv/backups/homelab (en este servidor)"
 fi
 
 if ! grep -q '^BACKUP_PASSWORD=.\+' .env; then
@@ -29,8 +25,15 @@ chmod 600 .env
 set -a; source .env; set +a
 export RESTIC_REPOSITORY="$BACKUP_REPO" RESTIC_PASSWORD="$BACKUP_PASSWORD"
 if [[ "$BACKUP_REPO" == /* ]]; then
-  mountpoint -q "$(dirname "$BACKUP_REPO")" || echo "AVISO: $(dirname "$BACKUP_REPO") no es un disco montado; la copia quedaría en el mismo disco."
   mkdir -p "$BACKUP_REPO"
+  chmod 700 "$BACKUP_REPO"
+  # En el mismo disco que los datos, duplicar las fotos solo gasta espacio: no protege si el disco falla
+  if [[ "$(df --output=source "$BACKUP_REPO" | tail -1)" == "$(df --output=source "${DATA_PATH:-/srv/homelab}" | tail -1)" ]]; then
+    echo "==> La copia está en el mismo disco que los datos: protege de borrados y fallos de"
+    echo "    actualización, no de que el disco se rompa. Las fotos de Immich no se duplican"
+    echo "    (Immich ya tiene papelera de 30 días). Cámbialo con BACKUP_PHOTOS=true en .env."
+    grep -q '^BACKUP_PHOTOS=' .env || echo "BACKUP_PHOTOS=false" >> .env
+  fi
 fi
 if restic cat config >/dev/null 2>&1; then
   echo "==> El repositorio ya existe"
@@ -48,8 +51,12 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 ExecStart=$DIR/backup/backup.sh
-Nice=10
+# Bajo consumo: prioridad mínima, como mucho media CPU (2 hilos) y 1 GB de RAM
+Nice=19
 IOSchedulingClass=idle
+CPUQuota=50%
+MemoryHigh=1G
+Environment=GOMAXPROCS=2
 U
 cat >/etc/systemd/system/homelab-backup.timer <<U
 [Unit]
