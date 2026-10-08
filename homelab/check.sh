@@ -35,8 +35,13 @@ web "Open WebUI"        http://127.0.0.1:3080/health
 web Vaultwarden         http://127.0.0.1:8222/alive
 web Jellyfin            http://127.0.0.1:8096/health
 web Pi-hole             http://127.0.0.1/admin/
-OLLAMA_URL="$(grep -oP '^OLLAMA_BASE_URL=\K.*' .env 2>/dev/null || echo http://127.0.0.1:11434)"
-web Ollama              "$OLLAMA_URL/api/version"
+# Ollama tal como lo ve Open WebUI: por la red Docker "ai"
+if docker exec open-webui curl -fsm 5 http://ollama:11434/api/version >/dev/null 2>&1 || \
+   docker exec open-webui python3 -c "import urllib.request;urllib.request.urlopen('http://ollama:11434/api/version',timeout=5)" >/dev/null 2>&1; then
+  printf "  %-24s ${G}OK${N}  (accesible desde Open WebUI, %s modelos)\n" Ollama "$(docker exec ollama ollama list 2>/dev/null | tail -n +2 | wc -l)"
+else
+  printf "  %-24s ${R}FALLO${N} (Open WebUI no llega a http://ollama:11434)\n" Ollama; FAILS=$((FAILS+1))
+fi
 
 echo; echo "== Otros =="
 if dig +short +time=3 @127.0.0.1 google.com | grep -q .; then echo "  DNS Pi-hole              ${G}OK${N}"; else echo "  DNS Pi-hole              ${R}FALLO${N}"; FAILS=$((FAILS+1)); fi

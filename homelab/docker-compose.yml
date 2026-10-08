@@ -132,10 +132,10 @@ services:
   open-webui:          # Chat tipo ChatGPT para tus modelos de Ollama
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
-    network_mode: host   # así llega a tu Ollama esté como esté configurado
+    ports: ["3080:8080"]
+    networks: [ai]       # red compartida con tu contenedor ollama (install.sh lo conecta)
     environment:
-      PORT: 3080
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      OLLAMA_BASE_URL: http://ollama:11434
       WEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
       ANONYMIZED_TELEMETRY: "false"
       SCARF_NO_ANALYTICS: "true"
@@ -190,3 +190,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
+
+networks:
+  ai:                  # red para Open WebUI y tu Ollama (creada por install.sh)
+    name: ai
+    external: true

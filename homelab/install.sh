@@ -114,25 +114,15 @@ if port_busy 80 || port_busy 443; then
   echo "    El puerto 80/443 está ocupado: Nginx Proxy Manager usará 8880/8443"
 fi
 
-# Dónde está tu Ollama: donde publique su puerto 11434 (localhost si es en todas las
-# interfaces, o la IP concreta, p. ej. la de Tailscale) o, si no lo publica, la IP de su contenedor
-OLLAMA_URL=http://127.0.0.1:11434
+# Open WebUI habla con tu Ollama por una red Docker compartida ("ai"), sin depender
+# de en qué IP publique Ollama su puerto. Conectar un contenedor a una red no lo modifica.
+sed -i '/^OLLAMA_BASE_URL=/d' .env
+docker network inspect ai >/dev/null 2>&1 || docker network create ai >/dev/null
 if exists ollama; then
-  BIND="$(docker inspect -f '{{with index .HostConfig.PortBindings "11434/tcp"}}{{(index . 0).HostIp}}:{{(index . 0).HostPort}}{{end}}' ollama 2>/dev/null)"
-  if [[ -n "$BIND" ]]; then
-    HOSTIP="${BIND%%:*}"; [[ -z "$HOSTIP" || "$HOSTIP" == 0.0.0.0 ]] && HOSTIP=127.0.0.1
-    OLLAMA_URL="http://$HOSTIP:${BIND##*:}"
-  fi
-  if ! curl -fsm 3 "$OLLAMA_URL/api/version" >/dev/null; then
-    OLLAMA_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' ollama | awk '{print $1}')"
-    [[ -n "$OLLAMA_IP" ]] && OLLAMA_URL="http://$OLLAMA_IP:11434"
-  fi
-fi
-sed -i '/^OLLAMA_BASE_URL=/d' .env && echo "OLLAMA_BASE_URL=$OLLAMA_URL" >> .env
-if curl -fsm 3 "$OLLAMA_URL/api/version" >/dev/null; then
-  echo "    Open WebUI usará tu Ollama en $OLLAMA_URL"
+  docker inspect -f '{{json .NetworkSettings.Networks}}' ollama | grep -q '"ai"' || docker network connect ai ollama
+  echo "    Open WebUI usará tu Ollama a través de la red Docker 'ai'"
 else
-  echo "    AVISO: no encuentro Ollama en $OLLAMA_URL; Open WebUI arrancará sin modelos"
+  echo "    AVISO: no hay contenedor 'ollama'; Open WebUI arrancará sin modelos"
 fi
 
 # VPN WireGuard propia solo si se pide; por defecto se usa Tailscale
