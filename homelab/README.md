@@ -44,3 +44,32 @@ sudo ./harden-ssh.sh                 # en el servidor
 3. **Vaultwarden**: ejecuta `sudo ./vaultwarden-https.sh` (HTTPS con Tailscale), crea tu cuenta y pon `VAULTWARDEN_SIGNUPS=false` en `.env`.
 4. **VPN**: abre el puerto 51820/udp en el router hacia el servidor.
 5. Pon una IP fija al servidor (reserva DHCP en el router).
+
+## Copias de seguridad
+
+Copias cifradas con [restic](https://restic.net) cada noche a las 03:00. Guarda 7 diarias, 4 semanales y 6 mensuales.
+
+Qué se copia:
+- `DATA_PATH` (configuración y datos de todos los servicios).
+- Las fotos de Immich (`PHOTOS_PATH`).
+- Un volcado de la base de datos de Immich.
+- Una copia coherente de Vaultwarden.
+- El `.env`.
+
+Configuración:
+1. Elige el destino y añádelo a `.env` como `BACKUP_REPO=...`:
+   - Otro disco: `/mnt/backup/homelab`
+   - Nube con rclone: `rclone:gdrive:homelab-backup` (antes ejecuta `sudo rclone config`)
+   - Backblaze B2 / S3: `s3:https://...` + `AWS_ACCESS_KEY_ID` y `AWS_SECRET_ACCESS_KEY`
+2. `sudo ./backup/setup-backup.sh`. **Guarda la contraseña que muestra** fuera del servidor.
+3. Primera copia: `sudo systemctl start homelab-backup` (progreso: `journalctl -u homelab-backup -f`).
+
+Alertas: en Uptime Kuma crea un monitor de tipo **Push** y pon su URL en `BACKUP_PUSH_URL`.
+
+Restaurar:
+```bash
+set -a; source .env; set +a; export RESTIC_REPOSITORY=$BACKUP_REPO RESTIC_PASSWORD=$BACKUP_PASSWORD
+sudo -E restic snapshots                                 # listar copias
+sudo -E restic restore latest --target /tmp/restaurado   # restaurar la última
+```
+Para la base de datos de Immich: `gunzip -c immich-db.sql.gz | docker exec -i immich_postgres psql -U postgres`.
