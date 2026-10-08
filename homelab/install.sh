@@ -66,6 +66,15 @@ if systemctl is-active --quiet systemd-resolved; then
   systemctl restart systemd-resolved
 fi
 
+echo "==> Ajustando Netdata para que consuma menos"
+# Métricas cada 2 s y sin detección de anomalías por IA: menos de la mitad de CPU
+NETDATA_CONF="$(grep -oP '^DATA_PATH=\K.*' "$DIR/.env" 2>/dev/null || echo /srv/homelab)/netdata/config/netdata.conf"
+if [[ ! -f "$NETDATA_CONF" ]]; then
+  mkdir -p "$(dirname "$NETDATA_CONF")"
+  printf '[db]\n  update every = 2\n\n[ml]\n  enabled = no\n' > "$NETDATA_CONF"
+  docker ps --format '{{.Names}}' | grep -qx netdata && docker restart netdata >/dev/null
+fi
+
 echo "==> Levantando servicios"
 cd "$DIR"
 [[ -f .env ]] || cp .env.example .env

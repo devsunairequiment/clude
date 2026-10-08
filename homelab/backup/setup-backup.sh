@@ -57,6 +57,7 @@ IOSchedulingClass=idle
 CPUQuota=50%
 MemoryHigh=1G
 Environment=GOMAXPROCS=2
+Environment=RESTIC_CACHE_DIR=/var/cache/restic
 U
 cat >/etc/systemd/system/homelab-backup.timer <<U
 [Unit]
