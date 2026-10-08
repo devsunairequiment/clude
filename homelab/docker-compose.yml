@@ -49,6 +49,7 @@ services:
   jellyfin:            # Servidor multimedia (tu Netflix propio)
     image: jellyfin/jellyfin:latest
     container_name: jellyfin
+    profiles: [jellyfin]   # install.sh lo omite si ya tienes un Jellyfin
     ports: ["8096:8096"]
     environment:
       TZ: ${TZ}

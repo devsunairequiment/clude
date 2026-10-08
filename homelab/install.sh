@@ -49,16 +49,15 @@ echo "==> Liberando el puerto 53 para AdGuard"
 if systemctl is-active --quiet systemd-resolved; then
   mkdir -p /etc/systemd/resolved.conf.d
   printf "[Resolve]\nDNSStubListener=no\nDNS=1.1.1.1\n" >/etc/systemd/resolved.conf.d/adguard.conf
-  # Sin el stub, 127.0.0.53 deja de responder: resolv.conf debe apuntar a DNS reales
-  if lsattr -d /etc/resolv.conf 2>/dev/null | cut -d' ' -f1 | grep -q i; then
-    if grep -q '127.0.0.53' /etc/resolv.conf; then
-      echo "    /etc/resolv.conf está bloqueado (chattr +i) y usa 127.0.0.53: lo desbloqueo"
+  # Sin el stub, 127.0.0.53 deja de responder: resolv.conf debe apuntar a DNS reales.
+  # Solo se conserva un resolv.conf propio si tiene "nameserver" válidos distintos del stub.
+  if grep -E '^nameserver ' /etc/resolv.conf 2>/dev/null | grep -vq '127.0.0.53'; then
+    echo "    /etc/resolv.conf tiene DNS propios: lo dejo como está"
+  else
+    if lsattr -d /etc/resolv.conf 2>/dev/null | cut -d' ' -f1 | grep -q i; then
+      echo "    /etc/resolv.conf está bloqueado (chattr +i) sin DNS válidos: lo desbloqueo"
       chattr -i /etc/resolv.conf
-    else
-      echo "    /etc/resolv.conf está bloqueado (chattr +i) con DNS propios: lo dejo como está"
     fi
-  fi
-  if ! lsattr -d /etc/resolv.conf 2>/dev/null | cut -d' ' -f1 | grep -q i; then
     # rm + ln: el ln de rust-coreutils (Ubuntu 26.04) no sobrescribe con -sf
     rm -f /etc/resolv.conf
     ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
@@ -69,7 +68,14 @@ fi
 echo "==> Levantando servicios"
 cd "$DIR"
 [[ -f .env ]] || cp .env.example .env
-docker compose up -d
+# Jellyfin solo se crea si no existe ya uno en el servidor
+if docker ps -a --format '{{.Names}}' | grep -qx jellyfin && \
+   [[ "$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' jellyfin)" != "homelab" ]]; then
+  echo "    Ya tienes un Jellyfin propio: lo respeto y no creo otro"
+  docker compose up -d
+else
+  docker compose --profile jellyfin up -d
+fi
 
 IP="$(hostname -I | awk '{print $1}')"
 cat <<M
