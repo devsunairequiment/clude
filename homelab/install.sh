@@ -78,6 +78,8 @@ fi
 echo "==> Levantando servicios"
 cd "$DIR"
 [[ -f .env ]] || cp .env.example .env
+# Si el .env no termina en salto de línea, lo que se añada se pegaría a la última variable
+[[ -s .env && "$(tail -c1 .env)" != "" ]] && echo >> .env
 # Variables nuevas que un .env antiguo no tenga
 grep -q '^PHOTOS_PATH=' .env || echo "PHOTOS_PATH=$(grep -oP '^DATA_PATH=\K.*' .env || echo /srv/homelab)/immich/library" >> .env
 grep -q '^IMMICH_VERSION=' .env || echo "IMMICH_VERSION=v3" >> .env
@@ -112,11 +114,19 @@ if port_busy 80 || port_busy 443; then
   echo "    El puerto 80/443 está ocupado: Nginx Proxy Manager usará 8880/8443"
 fi
 
-# Dónde está tu Ollama: en el puerto local 11434 o, si no lo publica, en la IP de su contenedor
+# Dónde está tu Ollama: donde publique su puerto 11434 (localhost si es en todas las
+# interfaces, o la IP concreta, p. ej. la de Tailscale) o, si no lo publica, la IP de su contenedor
 OLLAMA_URL=http://127.0.0.1:11434
-if ! curl -fsm 3 "$OLLAMA_URL/api/version" >/dev/null && exists ollama; then
-  OLLAMA_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' ollama | awk '{print $1}')"
-  [[ -n "$OLLAMA_IP" ]] && OLLAMA_URL="http://$OLLAMA_IP:11434"
+if exists ollama; then
+  BIND="$(docker inspect -f '{{with index .HostConfig.PortBindings "11434/tcp"}}{{(index . 0).HostIp}}:{{(index . 0).HostPort}}{{end}}' ollama 2>/dev/null)"
+  if [[ -n "$BIND" ]]; then
+    HOSTIP="${BIND%%:*}"; [[ -z "$HOSTIP" || "$HOSTIP" == 0.0.0.0 ]] && HOSTIP=127.0.0.1
+    OLLAMA_URL="http://$HOSTIP:${BIND##*:}"
+  fi
+  if ! curl -fsm 3 "$OLLAMA_URL/api/version" >/dev/null; then
+    OLLAMA_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' ollama | awk '{print $1}')"
+    [[ -n "$OLLAMA_IP" ]] && OLLAMA_URL="http://$OLLAMA_IP:11434"
+  fi
 fi
 sed -i '/^OLLAMA_BASE_URL=/d' .env && echo "OLLAMA_BASE_URL=$OLLAMA_URL" >> .env
 if curl -fsm 3 "$OLLAMA_URL/api/version" >/dev/null; then
