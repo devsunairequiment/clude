@@ -1,44 +1,52 @@
+# Cada servicio: enlace (href) y comprobación de que responde (siteMonitor)
 - Infraestructura:
     - Portainer:
-        # href: https://IP-DEL-SERVIDOR:9443
+        href: https://192.168.1.26:9443
+        siteMonitor: https://192.168.1.26:9443
+        description: Gestión de contenedores Docker
         icon: portainer.png
-        server: local
-        container: portainer
     - Nginx Proxy Manager:
+        href: http://192.168.1.26:81
+        siteMonitor: http://192.168.1.26:81
+        description: Proxy inverso y certificados HTTPS
         icon: nginx-proxy-manager.png
-        container: npm
-        server: local
     - Pi-hole:
+        href: http://192.168.1.26/admin
+        siteMonitor: http://192.168.1.26/admin
+        description: DNS y bloqueo de anuncios
         icon: pi-hole.png
-        container: pihole
-        server: local
 - Monitorización:
     - Uptime Kuma:
+        href: http://192.168.1.26:3001
+        siteMonitor: http://192.168.1.26:3001
+        description: Alertas de caídas
         icon: uptime-kuma.png
-        container: uptime-kuma
-        server: local
     - Netdata:
+        href: http://192.168.1.26:19999
+        siteMonitor: http://192.168.1.26:19999
+        description: Métricas en tiempo real
         icon: netdata.png
 - Apps:
     - Jellyfin:
+        href: http://192.168.1.26:8096
+        siteMonitor: http://192.168.1.26:8096
+        description: Películas y series
         icon: jellyfin.png
-        container: jellyfin
-        server: local
     - Immich:
         href: http://192.168.1.26:2283
+        siteMonitor: http://192.168.1.26:2283
+        description: Fotos y vídeos
         icon: immich.png
-        container: immich_server
-        server: local
     - Home Assistant:
         href: http://192.168.1.26:8123
+        siteMonitor: http://192.168.1.26:8123
+        description: Domótica
         icon: home-assistant.png
-        container: homeassistant
-        server: local
-    - Ollama:
-        icon: ollama.png
-        container: ollama
-        server: local
     - Vaultwarden:
+        description: Contraseñas (requiere HTTPS vía NPM)
         icon: vaultwarden.png
-        container: vaultwarden
-        server: local
+    - Ollama:
+        href: http://192.168.1.26:11434
+        siteMonitor: http://192.168.1.26:11434
+        description: Modelos de IA locales
+        icon: ollama.png
