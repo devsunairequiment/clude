@@ -49,9 +49,20 @@ echo "==> Liberando el puerto 53 para AdGuard"
 if systemctl is-active --quiet systemd-resolved; then
   mkdir -p /etc/systemd/resolved.conf.d
   printf "[Resolve]\nDNSStubListener=no\nDNS=1.1.1.1\n" >/etc/systemd/resolved.conf.d/adguard.conf
-  # rm + ln: el ln de rust-coreutils (Ubuntu 26.04) no sobrescribe con -sf
-  rm -f /etc/resolv.conf
-  ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+  # Sin el stub, 127.0.0.53 deja de responder: resolv.conf debe apuntar a DNS reales
+  if lsattr -d /etc/resolv.conf 2>/dev/null | cut -d' ' -f1 | grep -q i; then
+    if grep -q '127.0.0.53' /etc/resolv.conf; then
+      echo "    /etc/resolv.conf está bloqueado (chattr +i) y usa 127.0.0.53: lo desbloqueo"
+      chattr -i /etc/resolv.conf
+    else
+      echo "    /etc/resolv.conf está bloqueado (chattr +i) con DNS propios: lo dejo como está"
+    fi
+  fi
+  if ! lsattr -d /etc/resolv.conf 2>/dev/null | cut -d' ' -f1 | grep -q i; then
+    # rm + ln: el ln de rust-coreutils (Ubuntu 26.04) no sobrescribe con -sf
+    rm -f /etc/resolv.conf
+    ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+  fi
   systemctl restart systemd-resolved
 fi
 
