@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistencia</title>
+<style>
+  :root { --bg: #f5f6f8; --card: #fff; --texto: #1c1f26; --suave: #6b7280; --verde: #16a34a; --azul: #2563eb; --borde: #d8dce3; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #14161b; --card: #1e2128; --texto: #eceef2; --suave: #9aa3b2; --verde: #22c55e; --azul: #60a5fa; --borde: #323845; }
+  }
+  :root[data-theme="dark"] { --bg: #14161b; --card: #1e2128; --texto: #eceef2; --suave: #9aa3b2; --verde: #22c55e; --azul: #60a5fa; --borde: #323845; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+  header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--card); border-bottom: 1px solid var(--borde); position: sticky; top: 0; }
+  h1 { font-size: 20px; margin: 0; }
+  main { padding: 16px; max-width: 640px; margin: 0 auto; }
+  input, select { font: inherit; font-size: 16px; padding: 10px; border: 1px solid var(--borde); border-radius: 10px; background: var(--card); color: var(--texto); min-height: 44px; }
+  select { flex: 1; min-width: 0; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--azul); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  .btn.secundario { background: var(--card); color: var(--texto); border: 1px solid var(--borde); }
+  .btn:disabled { opacity: .5; }
+  .barra { display: flex; gap: 8px; margin-bottom: 12px; }
+  .resumen { color: var(--suave); margin: 8px 0 12px; }
+  .lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .fila { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px; min-height: 60px; border: 1px solid var(--borde); border-radius: 12px; background: var(--card); color: var(--texto); font: inherit; text-align: left; cursor: pointer; }
+  .fila b { display: block; font-size: 16px; }
+  .fila small { color: var(--suave); }
+  .caja { width: 30px; height: 30px; flex: none; border: 2px solid var(--borde); border-radius: 8px; display: grid; place-items: center; font-size: 18px; font-weight: 700; color: #fff; }
+  .fila.presente .caja { background: var(--verde); border-color: var(--verde); }
+  .acciones { display: grid; gap: 10px; margin-top: 16px; }
+  .sin-libro { text-align: center; padding: 32px 8px; }
+  .sin-libro p { color: var(--suave); }
+  .sin-libro .btn { width: 100%; margin-top: 10px; }
+  #estado { color: var(--suave); font-size: 14px; min-height: 20px; margin-top: 12px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Asistencia</h1>
+  <input type="date" id="fecha" aria-label="Fecha de asistencia">
+</header>
+
+<main>
+  <section id="sin-libro" class="sin-libro" hidden>
+    <p>Abre tu Excel de asistencia, o descarga una plantilla para llenarla en tu computadora.</p>
+    <label class="btn">Abrir mi Excel
+      <input type="file" id="abrir" accept=".xlsx" hidden>
+    </label>
+    <button class="btn secundario" id="plantilla">Descargar plantilla</button>
+  </section>
+
+  <section id="con-libro" hidden>
+    <div class="barra">
+      <select id="comando" aria-label="Comando"></select>
+      <select id="brigada" aria-label="Brigada"></select>
+    </div>
+    <p class="resumen" id="resumen"></p>
+    <ul class="lista" id="lista"></ul>
+    <div class="acciones">
+      <button class="btn" id="descargar">Descargar Excel</button>
+      <label class="btn secundario">Cambiar por otro Excel
+        <input type="file" id="cambiar" accept=".xlsx" hidden>
+      </label>
+    </div>
+  </section>
+
+  <p id="estado"></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="logica.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const aFecha = iso => iso.split('-').reverse().join('/'); // yyyy-mm-dd -> dd/mm/aaaa
+const aIso = f => f.split('/').reverse().join('-');
+const hoyIso = () => new Date().toLocaleDateString('en-CA');
+const el = (tag, texto, clase) => { const e = document.createElement(tag); e.textContent = texto; if (clase) e.className = clase; return e; };
+const aviso = msg => { $('estado').textContent = msg; };
+
+// Guarda una copia del Excel en el teléfono para que no se pierda si cierras el navegador.
+const DB = {
+  abrir: () => new Promise((ok, no) => {
+    const r = indexedDB.open('asistencia', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => no(r.error);
+  }),
+  async get() {
+    const db = await this.abrir();
+    return new Promise((ok, no) => { const q = db.transaction('kv').objectStore('kv').get('libro'); q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); });
+  },
+  async set(bytes) {
+    const db = await this.abrir();
+    return new Promise((ok, no) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(bytes, 'libro'); t.oncomplete = ok; t.onerror = () => no(t.error); });
+  },
+};
+
+let libro = null, fecha = aFecha(hoyIso()), comando = '', brigada = '';
+
+async function guardar() {
+  try {
+    await DB.set(Asistencia.aBytes(libro));
+    aviso('Guardado en el teléfono. Cuando termines, descarga el Excel.');
+  } catch (e) {
+    aviso('No se pudo guardar en el teléfono. Descarga el Excel ahora.');
+  }
+}
+
+function bajar(bytes, nombre) {
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  Object.assign(document.createElement('a'), { href: url, download: nombre }).click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function opciones(select, valores, actual) {
+  select.replaceChildren(...valores.map(v => Object.assign(el('option', v), { selected: v === actual })));
+}
+
+function pintar() {
+  $('sin-libro').hidden = !!libro;
+  $('con-libro').hidden = !libro;
+  if (!libro) return;
+  Asistencia.asegurarFecha(libro, fecha);
+  const comandos = [...new Set(libro.filas.map(f => f.Comando))];
+  if (!comandos.includes(comando)) comando = comandos[0] || '';
+  const brigadas = [...new Set(libro.filas.filter(f => f.Comando === comando).map(f => f.Brigada))];
+  if (!brigadas.includes(brigada)) brigada = brigadas[0] || '';
+  opciones($('comando'), comandos, comando);
+  opciones($('brigada'), brigadas, brigada);
+  $('fecha').value = aIso(fecha);
+  pintarLista();
+}
+
+function pintarLista() {
+  const filas = libro.filas.filter(f => f.Comando === comando && f.Brigada === brigada);
+  const brig = Asistencia.presentes(libro, fecha, comando, brigada);
+  const com = Asistencia.presentes(libro, fecha, comando, '');
+  $('resumen').textContent = `${fecha}: brigada ${brig.presentes} de ${brig.total} · comando ${com.presentes} de ${com.total}`;
+  $('lista').replaceChildren(...filas.map(f => {
+    const presente = f[fecha] === Asistencia.MARCA;
+    const boton = el('button', '', 'fila' + (presente ? ' presente' : ''));
+    const texto = el('span', '');
+    texto.append(el('b', f.Nombre), el('small', 'Matrícula ' + f['Matrícula']));
+    boton.append(el('span', presente ? '✔' : '', 'caja'), texto);
+    boton.onclick = () => { Asistencia.marcar(f, fecha, !presente); pintarLista(); guardar(); };
+    const li = el('li', '');
+    li.append(boton);
+    return li;
+  }));
+}
+
+async function abrir(file) {
+  if (!file) return;
+  try {
+    libro = Asistencia.leer(new Uint8Array(await file.arrayBuffer()));
+    comando = brigada = '';
+    pintar();
+    await guardar();
+  } catch (e) {
+    aviso('No pude abrir ese Excel: ' + e.message);
+  }
+}
+
+$('fecha').onchange = e => { fecha = aFecha(e.target.value); pintar(); };
+$('comando').onchange = e => { comando = e.target.value; brigada = ''; pintar(); };
+$('brigada').onchange = e => { brigada = e.target.value; pintar(); };
+$('abrir').onchange = e => abrir(e.target.files[0]);
+$('cambiar').onchange = e => abrir(e.target.files[0]);
+$('plantilla').onclick = () => bajar(Asistencia.plantilla(), 'plantilla_asistencia.xlsx');
+$('descargar').onclick = () => bajar(Asistencia.aBytes(libro), `asistencia_${aIso(fecha)}.xlsx`);
+
+(async () => {
+  try {
+    const guardado = await DB.get();
+    if (guardado) libro = Asistencia.leer(guardado);
+  } catch (e) {
+    aviso('No pude leer lo guardado en el teléfono: ' + e.message);
+  }
+  pintar();
+})();
+</script>
+</body>
+</html>
