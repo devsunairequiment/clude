@@ -16,9 +16,10 @@ A.asegurarFecha(libro, '20/10/2026');
 assert.deepStrictEqual(libro.headers, ['Comando', 'Brigada', 'Matrícula', 'Nombre', '20/10/2026', '02/11/2026', 'Total']);
 
 // Marcar y desmarcar.
-A.marcar(libro.filas[0], '20/10/2026', true);
-A.marcar(libro.filas[1], '20/10/2026', true);
-A.marcar(libro.filas[1], '20/10/2026', false);
+A.marcar(libro.filas[0], '20/10/2026', A.MARCA);
+A.marcar(libro.filas[1], '20/10/2026', A.FALTA);
+A.marcar(libro.filas[1], '20/10/2026', '');
+assert.strictEqual(libro.filas[1]['20/10/2026'], '');
 assert.deepStrictEqual(A.presentes(libro, '20/10/2026', 'Comando 1', 'Brigada A'), { presentes: 1, total: 1 });
 assert.deepStrictEqual(A.presentes(libro, '20/10/2026', 'Comando 1', ''), { presentes: 1, total: 2 });
 
@@ -41,5 +42,12 @@ X.utils.book_append_sheet(wbFecha, hojaFecha, 'Asistencia');
 const fechaLeida = A.leer(X.write(wbFecha, { type: 'array', bookType: 'xlsx' }));
 assert.deepStrictEqual(fechaLeida.headers.slice(4, 5), ['20/10/2026']);
 assert.strictEqual(fechaLeida.filas[0]['Matrícula'], '7');
+
+// Texto para copiar a Excel: el Total va calculado y la falta se ve como ✗.
+A.marcar(libro.filas[1], '02/11/2026', A.FALTA);
+const texto = A.aTexto(libro).split('\n');
+assert.strictEqual(texto[0], 'Comando\tBrigada\tMatrícula\tNombre\t20/10/2026\t02/11/2026\tTotal');
+assert.strictEqual(texto[1], 'Comando 1\tBrigada A\t001\tAlumno ejemplo\t✔\t\t1');
+assert.strictEqual(texto[2], 'Comando 1\tBrigada B\t002\tOtro\t\t✗\t0');
 
 console.log('OK: todas las pruebas de logica.js pasaron');

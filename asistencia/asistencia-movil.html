@@ -5,71 +5,98 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Asistencia de brigadas</title>
 <style>
-  :root { --bg: #f5f6f8; --card: #fff; --texto: #1c1f26; --suave: #6b7280; --verde: #16a34a; --azul: #2563eb; --borde: #d8dce3; }
+  :root { --bg: #f4f1ea; --card: #fffdf8; --texto: #1d1b18; --suave: #7a736a; --si: #2f9e5b; --no: #d4553f; --acento: #3b5bdb; --borde: #e2dccf; }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --bg: #14161b; --card: #1e2128; --texto: #eceef2; --suave: #9aa3b2; --verde: #22c55e; --azul: #60a5fa; --borde: #323845; }
+    :root:not([data-theme="light"]) { --bg: #16161a; --card: #22222a; --texto: #f1efe9; --suave: #9a958c; --si: #36b96c; --no: #ef6b55; --acento: #7c95ff; --borde: #34343e; color-scheme: dark; }
   }
-  :root[data-theme="dark"] { --bg: #14161b; --card: #1e2128; --texto: #eceef2; --suave: #9aa3b2; --verde: #22c55e; --azul: #60a5fa; --borde: #323845; }
+  :root[data-theme="dark"] { --bg: #16161a; --card: #22222a; --texto: #f1efe9; --suave: #9a958c; --si: #36b96c; --no: #ef6b55; --acento: #7c95ff; --borde: #34343e; color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--texto); }
-  header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--card); border-bottom: 1px solid var(--borde); position: sticky; top: 0; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 14px 16px; }
   h1 { font-size: 20px; margin: 0; }
-  main { padding: 16px; max-width: 640px; margin: 0 auto; }
-  input, select { font: inherit; font-size: 16px; padding: 10px; border: 1px solid var(--borde); border-radius: 10px; background: var(--card); color: var(--texto); min-height: 44px; }
-  select { flex: 1; min-width: 0; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--azul); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  main { padding: 0 16px 24px; max-width: 480px; margin: 0 auto; }
+  input, select { font: inherit; font-size: 16px; padding: 10px; border: 1px solid var(--borde); border-radius: 10px; background: var(--card); color: var(--texto); min-height: 44px; min-width: 0; }
+  select { flex: 1; }
+  .barra { display: flex; gap: 8px; margin-bottom: 8px; }
+  .estado-dia { color: var(--suave); font-size: 14px; margin: 4px 0 16px; }
+  .mazo { position: relative; height: 340px; margin-bottom: 16px; }
+  .tarjeta { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 24px; border-radius: 20px; background: var(--card); border: 1px solid var(--borde); box-shadow: 0 8px 24px rgb(0 0 0 / .12); touch-action: pan-y; user-select: none; cursor: grab; text-align: center; }
+  .tarjeta .nombre { font-size: 26px; font-weight: 700; text-wrap: balance; }
+  .tarjeta .meta { color: var(--suave); }
+  .sello { position: absolute; top: 20px; font-size: 22px; font-weight: 800; letter-spacing: .05em; padding: 4px 10px; border: 3px solid; border-radius: 8px; opacity: 0; }
+  .sello.si { left: 20px; color: var(--si); border-color: var(--si); transform: rotate(-12deg); }
+  .sello.no { right: 20px; color: var(--no); border-color: var(--no); transform: rotate(12deg); }
+  .acciones { display: flex; justify-content: center; gap: 16px; }
+  .acciones button { width: 64px; height: 64px; border-radius: 50%; border: 1px solid var(--borde); background: var(--card); font-size: 26px; cursor: pointer; color: var(--texto); }
+  .acciones .no { color: var(--no); }
+  .acciones .si { color: var(--si); }
+  .acciones .deshacer { width: 48px; height: 48px; font-size: 20px; align-self: center; color: var(--suave); }
+  .fin { text-align: center; padding: 32px 8px; }
+  .fin p { color: var(--suave); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 16px; margin: 6px; border-radius: 12px; border: 0; background: var(--acento); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
   .btn.secundario { background: var(--card); color: var(--texto); border: 1px solid var(--borde); }
-  .btn:disabled { opacity: .5; }
-  .barra { display: flex; gap: 8px; margin-bottom: 12px; }
-  .resumen { color: var(--suave); margin: 8px 0 12px; }
-  .lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
-  .fila { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px; min-height: 60px; border: 1px solid var(--borde); border-radius: 12px; background: var(--card); color: var(--texto); font: inherit; text-align: left; cursor: pointer; }
-  .fila b { display: block; font-size: 16px; }
+  details { margin-top: 20px; }
+  summary { color: var(--suave); cursor: pointer; padding: 8px 0; }
+  .lista { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; }
+  .fila { width: 100%; display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background: var(--card); color: var(--texto); font: inherit; text-align: left; cursor: pointer; }
   .fila small { color: var(--suave); }
-  .caja { width: 30px; height: 30px; flex: none; border: 2px solid var(--borde); border-radius: 8px; display: grid; place-items: center; font-size: 18px; font-weight: 700; color: #fff; }
-  .fila.presente .caja { background: var(--verde); border-color: var(--verde); }
-  .acciones { display: grid; gap: 10px; margin-top: 16px; }
-  .sin-libro { text-align: center; padding: 32px 8px; }
-  .sin-libro p { color: var(--suave); }
-  .sin-libro .btn { width: 100%; margin-top: 10px; }
-  #estado { color: var(--suave); font-size: 14px; min-height: 20px; margin-top: 12px; }
+  #estado { color: var(--suave); font-size: 14px; min-height: 20px; margin-top: 8px; }
+  textarea { width: 100%; min-height: 120px; font: 13px ui-monospace, monospace; margin-top: 8px; background: var(--card); color: var(--texto); border: 1px solid var(--borde); border-radius: 10px; padding: 8px; }
   [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Asistencia</h1>
+  <h1>Asistencia de brigadas</h1>
   <input type="date" id="fecha" aria-label="Fecha de asistencia">
 </header>
 
 <main>
-  <section id="sin-libro" class="sin-libro" hidden>
-    <p>Abre tu Excel de asistencia, o descarga una plantilla para llenarla en tu computadora.</p>
-    <label class="btn">Abrir mi Excel
-      <input type="file" id="abrir" accept=".xlsx" hidden>
-    </label>
-    <button class="btn secundario" id="plantilla">Descargar plantilla</button>
+  <div class="barra">
+    <select id="comando" aria-label="Comando"></select>
+    <select id="brigada" aria-label="Brigada"></select>
+  </div>
+  <p class="estado-dia" id="resumen"></p>
+
+  <section id="mazo-sec">
+    <div class="mazo" id="mazo">
+      <div class="tarjeta" id="tarjeta">
+        <span class="sello si">ASISTIÓ</span>
+        <span class="sello no">FALTA</span>
+        <div class="nombre" id="nombre"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+    </div>
+    <div class="acciones">
+      <button class="no" id="btn-no" aria-label="No asistió">✗</button>
+      <button class="deshacer" id="deshacer" aria-label="Deshacer">↶</button>
+      <button class="si" id="btn-si" aria-label="Asistió">✔</button>
+    </div>
   </section>
 
-  <section id="con-libro" hidden>
-    <div class="barra">
-      <select id="comando" aria-label="Comando"></select>
-      <select id="brigada" aria-label="Brigada"></select>
-    </div>
-    <p class="resumen" id="resumen"></p>
-    <ul class="lista" id="lista"></ul>
-    <div class="acciones">
-      <button class="btn" id="descargar">Descargar Excel</button>
-      <label class="btn secundario">Cambiar por otro Excel
-        <input type="file" id="cambiar" accept=".xlsx" hidden>
-      </label>
-    </div>
+  <section class="fin" id="fin" hidden>
+    <p id="fin-texto"></p>
+    <button class="btn" id="copiar">Copiar para Excel</button>
+    <textarea id="texto" hidden readonly></textarea>
   </section>
+
+  <details>
+    <summary>Ver y cambiar la lista completa</summary>
+    <ul class="lista" id="lista"></ul>
+  </details>
+  <details>
+    <summary>Cambiar por otro Excel</summary>
+    <input type="file" id="abrir" accept=".xlsx">
+  </details>
 
   <p id="estado"></p>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+// Alumnos de arranque: se usan cuando el teléfono todavía no tiene datos guardados.
+const INICIAL = {"headers":["Comando","Brigada","Matrícula","Nombre","Total"],"filas":[{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"001","Nombre":"Andrea Vélez","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"002","Nombre":"Bryan Solís","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"003","Nombre":"Carla Ortiz","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"004","Nombre":"Daniel Mora","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"005","Nombre":"Elena Ruiz","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"006","Nombre":"Fabián Castro","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"007","Nombre":"Gabriela Ríos","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"008","Nombre":"Hugo Salas","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"009","Nombre":"Irene Peña","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"010","Nombre":"Jorge Lara","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"011","Nombre":"Karen Meza","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"012","Nombre":"Leonardo Paz","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"013","Nombre":"Mariana Vega","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"014","Nombre":"Nicolás Rojas","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"015","Nombre":"Olga Duarte","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"016","Nombre":"Pablo Núñez","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"017","Nombre":"Quetzal Ibarra","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"018","Nombre":"Rocío Téllez","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"019","Nombre":"Sergio Aguilar","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"020","Nombre":"Tania Flores","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"021","Nombre":"Andrea Vélez","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"022","Nombre":"Bryan Solís","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"023","Nombre":"Carla Ortiz","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"024","Nombre":"Daniel Mora","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"025","Nombre":"Elena Ruiz","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"026","Nombre":"Fabián Castro","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"027","Nombre":"Gabriela Ríos","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"028","Nombre":"Hugo Salas","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"029","Nombre":"Irene Peña","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"030","Nombre":"Jorge Lara","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"031","Nombre":"Karen Meza","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"032","Nombre":"Leonardo Paz","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"033","Nombre":"Mariana Vega","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"034","Nombre":"Nicolás Rojas","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"035","Nombre":"Olga Duarte","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"036","Nombre":"Pablo Núñez","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"037","Nombre":"Quetzal Ibarra","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"038","Nombre":"Rocío Téllez","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"039","Nombre":"Sergio Aguilar","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"040","Nombre":"Tania Flores","Total":""}]};
+</script>
 <script>
 // Lógica del libro de asistencia, sin pantalla: se prueba en Node y se usa en el navegador.
 // Libro = { headers: [...], filas: [{ columna: valor }] }. Columnas: Comando, Brigada, Matrícula, Nombre, fechas dd/mm/aaaa..., Total.
@@ -79,6 +106,7 @@ var Asistencia = (function () {
   const TOTAL = 'Total';
   // shortcut: la marca es el texto ✔ y no una casilla de formulario de Excel (SheetJS no las escribe), subir a casilla real con un editor de .xlsx que las soporte
   const MARCA = '✔';
+  const FALTA = '✗';
   const esFecha = h => /^\d{2}\/\d{2}\/\d{4}$/.test(h);
   const aOrden = f => f.slice(6) + f.slice(3, 5) + f.slice(0, 2); // dd/mm/aaaa -> aaaammdd
 
@@ -115,8 +143,13 @@ var Asistencia = (function () {
     libro.filas.forEach(f => { f[fecha] = ''; });
   }
 
-  function marcar(fila, fecha, asistio) {
-    fila[fecha] = asistio ? MARCA : '';
+  // valor: MARCA (asistió), FALTA (no asistió) o '' (sin marcar).
+  function marcar(fila, fecha, valor) {
+    fila[fecha] = valor;
+  }
+
+  function contar(fila, fechas) {
+    return fechas.filter(d => fila[d] === MARCA).length;
   }
 
   // Ordena por comando, brigada y nombre, para que la hoja quede clasificada.
@@ -134,7 +167,7 @@ var Asistencia = (function () {
     const colIni = libro.headers.findIndex(esFecha);
     libro.filas.forEach((f, i) => {
       const dir = X.utils.encode_cell({ r: i + 1, c: colTotal });
-      const v = fechas.filter(d => f[d] === MARCA).length; // valor en caché, para vistas previas sin recalcular
+      const v = contar(f, fechas); // valor en caché, para vistas previas sin recalcular
       ws[dir] = { t: 'n', v };
       if (fechas.length) ws[dir].f = `COUNTIF(${X.utils.encode_col(colIni)}${i + 2}:${X.utils.encode_col(colTotal - 1)}${i + 2},"${MARCA}")`;
     });
@@ -149,12 +182,21 @@ var Asistencia = (function () {
     return aBytes(libro);
   }
 
+  // Texto con tabulaciones: se pega directo en Excel. El Total va calculado.
+  function aTexto(libro) {
+    ordenar(libro);
+    const fechas = libro.headers.filter(esFecha);
+    const celda = (f, h) => (h === TOTAL ? contar(f, fechas) : f[h] ?? '');
+    return [libro.headers, ...libro.filas.map(f => libro.headers.map(h => celda(f, h)))]
+      .map(r => r.join('\t')).join('\n');
+  }
+
   function presentes(libro, fecha, comando, brigada) {
     const filas = libro.filas.filter(f => (!comando || f.Comando === comando) && (!brigada || f.Brigada === brigada));
     return { presentes: filas.filter(f => f[fecha] === MARCA).length, total: filas.length };
   }
 
-  return { MARCA, BASE, TOTAL, leer, asegurarFecha, marcar, aBytes, plantilla, presentes, esFecha, ordenarColumnas };
+  return { MARCA, FALTA, BASE, TOTAL, leer, asegurarFecha, marcar, aBytes, aTexto, plantilla, presentes, esFecha, ordenarColumnas };
 })();
 
 if (typeof module !== 'undefined') module.exports = Asistencia;
@@ -166,8 +208,9 @@ const aIso = f => f.split('/').reverse().join('-');
 const hoyIso = () => new Date().toLocaleDateString('en-CA');
 const el = (tag, texto, clase) => { const e = document.createElement(tag); e.textContent = texto; if (clase) e.className = clase; return e; };
 const aviso = msg => { $('estado').textContent = msg; };
+const { MARCA, FALTA } = Asistencia;
 
-// Guarda una copia del Excel en el teléfono para que no se pierda si cierras el navegador.
+// Copia del Excel en el navegador para no perder marcas si se cierra la página.
 const DB = {
   abrir: () => new Promise((ok, no) => {
     const r = indexedDB.open('asistencia', 1);
@@ -185,22 +228,18 @@ const DB = {
   },
 };
 
-const INICIAL = {"headers":["Comando","Brigada","Matrícula","Nombre","Total"],"filas":[{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"001","Nombre":"Andrea Vélez","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"002","Nombre":"Bryan Solís","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"003","Nombre":"Carla Ortiz","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"004","Nombre":"Daniel Mora","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"005","Nombre":"Elena Ruiz","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"006","Nombre":"Fabián Castro","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"007","Nombre":"Gabriela Ríos","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"008","Nombre":"Hugo Salas","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"009","Nombre":"Irene Peña","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"010","Nombre":"Jorge Lara","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"011","Nombre":"Karen Meza","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"012","Nombre":"Leonardo Paz","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"013","Nombre":"Mariana Vega","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"014","Nombre":"Nicolás Rojas","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"015","Nombre":"Olga Duarte","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"016","Nombre":"Pablo Núñez","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"017","Nombre":"Quetzal Ibarra","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"018","Nombre":"Rocío Téllez","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"019","Nombre":"Sergio Aguilar","Total":""},{"Comando":"Comando 1","Brigada":"Perdomo","Matrícula":"020","Nombre":"Tania Flores","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"021","Nombre":"Andrea Vélez","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"022","Nombre":"Bryan Solís","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"023","Nombre":"Carla Ortiz","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"024","Nombre":"Daniel Mora","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"025","Nombre":"Elena Ruiz","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"026","Nombre":"Fabián Castro","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"027","Nombre":"Gabriela Ríos","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"028","Nombre":"Hugo Salas","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"029","Nombre":"Irene Peña","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"030","Nombre":"Jorge Lara","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"031","Nombre":"Karen Meza","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"032","Nombre":"Leonardo Paz","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"033","Nombre":"Mariana Vega","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"034","Nombre":"Nicolás Rojas","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"035","Nombre":"Olga Duarte","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"036","Nombre":"Pablo Núñez","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"037","Nombre":"Quetzal Ibarra","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"038","Nombre":"Rocío Téllez","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"039","Nombre":"Sergio Aguilar","Total":""},{"Comando":"Comando 1","Brigada":"Ensueño","Matrícula":"040","Nombre":"Tania Flores","Total":""}]};
-let libro = null, fecha = aFecha(hoyIso()), comando = '', brigada = '';
+let libro = null, fecha = aFecha(hoyIso()), comando = '', brigada = '', ultimo = null;
 
 async function guardar() {
   try {
     await DB.set(Asistencia.aBytes(libro));
-    aviso('Guardado en el teléfono. Cuando termines, descarga el Excel.');
   } catch (e) {
-    aviso('No se pudo guardar en el teléfono. Descarga el Excel ahora.');
+    aviso('No se pudo guardar en el teléfono. Copia los datos antes de cerrar.');
   }
 }
 
-function bajar(bytes, nombre) {
-  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-  Object.assign(document.createElement('a'), { href: url, download: nombre }).click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+function alumnosDeBrigada() {
+  return libro.filas.filter(f => f.Comando === comando && f.Brigada === brigada);
 }
 
 function opciones(select, valores, actual) {
@@ -208,8 +247,6 @@ function opciones(select, valores, actual) {
 }
 
 function pintar() {
-  $('sin-libro').hidden = !!libro;
-  $('con-libro').hidden = !libro;
   if (!libro) return;
   Asistencia.asegurarFecha(libro, fecha);
   const comandos = [...new Set(libro.filas.map(f => f.Comando))];
@@ -219,46 +256,122 @@ function pintar() {
   opciones($('comando'), comandos, comando);
   opciones($('brigada'), brigadas, brigada);
   $('fecha').value = aIso(fecha);
+  const b = Asistencia.presentes(libro, fecha, comando, brigada);
+  const c = Asistencia.presentes(libro, fecha, comando, '');
+  $('resumen').textContent = `Brigada: ${b.presentes} de ${b.total} asistieron · Comando: ${c.presentes} de ${c.total}`;
+  pintarMazo();
   pintarLista();
 }
 
+// Solo aparecen los alumnos sin marcar; al marcar, la tarjeta se va.
+function pintarMazo() {
+  const pendiente = alumnosDeBrigada().find(f => f[fecha] === '');
+  $('mazo-sec').hidden = !pendiente;
+  $('fin').hidden = !!pendiente;
+  if (!pendiente) {
+    $('fin-texto').textContent = `Brigada ${brigada} completa. Pasa los datos a tu Excel.`;
+    return;
+  }
+  const tarjeta = $('tarjeta');
+  tarjeta.style.transition = 'none';
+  tarjeta.style.transform = '';
+  $('nombre').textContent = pendiente.Nombre;
+  $('meta').textContent = `${pendiente.Comando} · ${pendiente.Brigada} · Matrícula ${pendiente['Matrícula']}`;
+}
+
 function pintarLista() {
-  const filas = libro.filas.filter(f => f.Comando === comando && f.Brigada === brigada);
-  const brig = Asistencia.presentes(libro, fecha, comando, brigada);
-  const com = Asistencia.presentes(libro, fecha, comando, '');
-  $('resumen').textContent = `${fecha}: brigada ${brig.presentes} de ${brig.total} · comando ${com.presentes} de ${com.total}`;
-  $('lista').replaceChildren(...filas.map(f => {
-    const presente = f[fecha] === Asistencia.MARCA;
-    const boton = el('button', '', 'fila' + (presente ? ' presente' : ''));
-    const texto = el('span', '');
-    texto.append(el('b', f.Nombre), el('small', 'Matrícula ' + f['Matrícula']));
-    boton.append(el('span', presente ? '✔' : '', 'caja'), texto);
-    boton.onclick = () => { Asistencia.marcar(f, fecha, !presente); pintarLista(); guardar(); };
+  $('lista').replaceChildren(...alumnosDeBrigada().map(f => {
+    const estado = f[fecha] === MARCA ? '✔ asistió' : f[fecha] === FALTA ? '✗ falta' : 'sin marcar';
+    const boton = el('button', '', 'fila');
+    boton.append(el('b', f.Nombre), el('small', estado));
+    boton.onclick = () => marcarAlumno(f, f[fecha] === MARCA ? '' : MARCA);
     const li = el('li', '');
     li.append(boton);
     return li;
   }));
 }
 
-async function abrir(file) {
+function marcarAlumno(fila, valor) {
+  ultimo = { fila, fecha, previo: fila[fecha] };
+  Asistencia.marcar(fila, fecha, valor);
+  guardar();
+  pintar();
+}
+
+// Deslizar: derecha = asistió, izquierda = falta. Los botones hacen lo mismo.
+function decidir(valor) {
+  const tarjeta = $('tarjeta');
+  const alumno = alumnosDeBrigada().find(f => f[fecha] === '');
+  if (!alumno) return;
+  tarjeta.style.transition = 'transform .25s, opacity .25s';
+  tarjeta.style.transform = `translateX(${valor === MARCA ? 500 : -500}px) rotate(${valor === MARCA ? 20 : -20}deg)`;
+  tarjeta.style.opacity = '0';
+  setTimeout(() => { tarjeta.style.opacity = '1'; marcarAlumno(alumno, valor); }, 250);
+}
+
+function volver() {
+  if (!ultimo) return aviso('No hay nada que deshacer.');
+  const { fila, fecha: f, previo } = ultimo;
+  Asistencia.marcar(fila, f, previo);
+  ultimo = null;
+  guardar();
+  pintar();
+}
+
+const tarjeta = $('tarjeta');
+let inicioX = null, dx = 0;
+tarjeta.onpointerdown = e => { inicioX = e.clientX; dx = 0; tarjeta.setPointerCapture(e.pointerId); tarjeta.style.transition = 'none'; };
+tarjeta.onpointermove = e => {
+  if (inicioX === null) return;
+  dx = e.clientX - inicioX;
+  tarjeta.style.transform = `translateX(${dx}px) rotate(${dx / 20}deg)`;
+  $('tarjeta').querySelector('.si').style.opacity = Math.max(0, dx / 120);
+  $('tarjeta').querySelector('.no').style.opacity = Math.max(0, -dx / 120);
+};
+function soltar() {
+  if (inicioX === null) return;
+  inicioX = null;
+  Array.from(tarjeta.querySelectorAll('.sello')).forEach(s => { s.style.opacity = ''; });
+  if (Math.abs(dx) > 90) decidir(dx > 0 ? MARCA : FALTA);
+  else { tarjeta.style.transition = 'transform .2s'; tarjeta.style.transform = ''; }
+}
+tarjeta.onpointerup = soltar;
+tarjeta.onpointercancel = soltar;
+
+$('btn-si').onclick = () => decidir(MARCA);
+$('btn-no').onclick = () => decidir(FALTA);
+$('deshacer').onclick = volver;
+$('fecha').onchange = e => { fecha = aFecha(e.target.value); pintar(); };
+$('comando').onchange = e => { comando = e.target.value; brigada = ''; pintar(); };
+$('brigada').onchange = e => { brigada = e.target.value; pintar(); };
+
+// Copiar: el visor no deja descargar archivos, así que el texto va al portapapeles (Excel lo pega en celdas).
+$('copiar').onclick = async () => {
+  const texto = Asistencia.aTexto(libro);
+  try {
+    await navigator.clipboard.writeText(texto);
+    aviso('Copiado. En Excel pega con Ctrl+V (o ⌘V) en una celda A1 y guarda el archivo.');
+  } catch (e) {
+    $('texto').hidden = false;
+    $('texto').value = texto;
+    $('texto').select();
+    aviso('No pude copiar automáticamente. Selecciona el texto de abajo y cópialo.');
+  }
+};
+
+$('abrir').onchange = async e => {
+  const file = e.target.files[0];
   if (!file) return;
   try {
     libro = Asistencia.leer(new Uint8Array(await file.arrayBuffer()));
     comando = brigada = '';
+    ultimo = null;
     pintar();
     await guardar();
-  } catch (e) {
-    aviso('No pude abrir ese Excel: ' + e.message);
+  } catch (err) {
+    aviso('No pude abrir ese Excel: ' + err.message);
   }
-}
-
-$('fecha').onchange = e => { fecha = aFecha(e.target.value); pintar(); };
-$('comando').onchange = e => { comando = e.target.value; brigada = ''; pintar(); };
-$('brigada').onchange = e => { brigada = e.target.value; pintar(); };
-$('abrir').onchange = e => abrir(e.target.files[0]);
-$('cambiar').onchange = e => abrir(e.target.files[0]);
-$('plantilla').onclick = () => bajar(Asistencia.plantilla(), 'plantilla_asistencia.xlsx');
-$('descargar').onclick = () => bajar(Asistencia.aBytes(libro), `asistencia_${aIso(fecha)}.xlsx`);
+};
 
 (async () => {
   try {
@@ -266,6 +379,7 @@ $('descargar').onclick = () => bajar(Asistencia.aBytes(libro), `asistencia_${aIs
     // Sin copia guardada, arranca con los alumnos iniciales.
     libro = guardado ? Asistencia.leer(guardado) : structuredClone(INICIAL);
   } catch (e) {
+    libro = structuredClone(INICIAL);
     aviso('No pude leer lo guardado en el teléfono: ' + e.message);
   }
   pintar();

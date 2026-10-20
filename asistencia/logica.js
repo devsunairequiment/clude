@@ -6,6 +6,7 @@ var Asistencia = (function () {
   const TOTAL = 'Total';
   // shortcut: la marca es el texto ✔ y no una casilla de formulario de Excel (SheetJS no las escribe), subir a casilla real con un editor de .xlsx que las soporte
   const MARCA = '✔';
+  const FALTA = '✗';
   const esFecha = h => /^\d{2}\/\d{2}\/\d{4}$/.test(h);
   const aOrden = f => f.slice(6) + f.slice(3, 5) + f.slice(0, 2); // dd/mm/aaaa -> aaaammdd
 
@@ -42,8 +43,13 @@ var Asistencia = (function () {
     libro.filas.forEach(f => { f[fecha] = ''; });
   }
 
-  function marcar(fila, fecha, asistio) {
-    fila[fecha] = asistio ? MARCA : '';
+  // valor: MARCA (asistió), FALTA (no asistió) o '' (sin marcar).
+  function marcar(fila, fecha, valor) {
+    fila[fecha] = valor;
+  }
+
+  function contar(fila, fechas) {
+    return fechas.filter(d => fila[d] === MARCA).length;
   }
 
   // Ordena por comando, brigada y nombre, para que la hoja quede clasificada.
@@ -61,7 +67,7 @@ var Asistencia = (function () {
     const colIni = libro.headers.findIndex(esFecha);
     libro.filas.forEach((f, i) => {
       const dir = X.utils.encode_cell({ r: i + 1, c: colTotal });
-      const v = fechas.filter(d => f[d] === MARCA).length; // valor en caché, para vistas previas sin recalcular
+      const v = contar(f, fechas); // valor en caché, para vistas previas sin recalcular
       ws[dir] = { t: 'n', v };
       if (fechas.length) ws[dir].f = `COUNTIF(${X.utils.encode_col(colIni)}${i + 2}:${X.utils.encode_col(colTotal - 1)}${i + 2},"${MARCA}")`;
     });
@@ -76,12 +82,21 @@ var Asistencia = (function () {
     return aBytes(libro);
   }
 
+  // Texto con tabulaciones: se pega directo en Excel. El Total va calculado.
+  function aTexto(libro) {
+    ordenar(libro);
+    const fechas = libro.headers.filter(esFecha);
+    const celda = (f, h) => (h === TOTAL ? contar(f, fechas) : f[h] ?? '');
+    return [libro.headers, ...libro.filas.map(f => libro.headers.map(h => celda(f, h)))]
+      .map(r => r.join('\t')).join('\n');
+  }
+
   function presentes(libro, fecha, comando, brigada) {
     const filas = libro.filas.filter(f => (!comando || f.Comando === comando) && (!brigada || f.Brigada === brigada));
     return { presentes: filas.filter(f => f[fecha] === MARCA).length, total: filas.length };
   }
 
-  return { MARCA, BASE, TOTAL, leer, asegurarFecha, marcar, aBytes, plantilla, presentes, esFecha, ordenarColumnas };
+  return { MARCA, FALTA, BASE, TOTAL, leer, asegurarFecha, marcar, aBytes, aTexto, plantilla, presentes, esFecha, ordenarColumnas };
 })();
 
 if (typeof module !== 'undefined') module.exports = Asistencia;
